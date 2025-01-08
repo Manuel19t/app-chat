@@ -1,0 +1,76 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+#chat-container {
+  width: 300px;
+  float: left;
+  padding: 10px;
+}
+
+#messages {
+  max-height: 400px;
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 5px;
+  margin: 5px 0;
+}
+
+button {
+  padding: 5px 10px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#game-container {
+  float: left;
+  margin-left: 30px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-template-rows: repeat(3, 100px);
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.game-title {
+  text-align: center; /* Centra el texto */
+  font-size: 100px; /* Tamaño grande para el nombre del juego */
+  font-weight: bold; /* Negrita para resaltar el título */
+  color: #333; /* Color oscuro para visibilidad */
+  margin-bottom: 20px; /* Espacio debajo del título */
+}
+
+#game-status {
+  font-size: 18px;
+  text-align: center;
+  color: #333;
+  font-weight: bold;
+} 	

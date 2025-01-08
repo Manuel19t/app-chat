@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe Game</title>
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
+  }
+
+  .container {
+    width: 80%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .username-container {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .username-container input {
+    padding: 10px;
+    font-size: 16px;
+    width: 200px;
+    text-align: center;
+  }
+
+  .main-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .chat-container {
+    width: 48%;
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .chat-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .chat-box {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .input-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .input-container input {
+    width: 60%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+
+  .input-container button {
+    width: 15%;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .input-container button:hover {
+    background-color: #45a049;
+  }
+
+  .input-container input[type="file"] {
+    width: 17%; 
+    padding: 10px;
+    font-size: 8px;
+  }
+
+  .game-container {
+    width: 48%;
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    justify-content: center; 
+  }
+
+  .game-title {
+    text-align: center;
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    width: 100%;
+    height: 300px;
+    margin: 0 auto; /* Center the board horizontally */
+  }
+
+  .cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    user-select: none;
+    height: 100px;
+  }
+
+  .cell:hover {
+    background-color: #ddd;
+  }
+
+  .message {
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <!-- Username Container -->
+    <div class="username-container">
+      <input type="text" id="username" placeholder="Enter your username" />
+    </div>
+
+    <!-- Main Container (divided into two parts) -->
+    <div class="main-container">
+      <!-- Chat Container -->
+      <div class="chat-container">
+        <div class="chat-title">Chat</div>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-container">
+          <input type="text" id="chatInput" placeholder="Type your message..." />
+          <input type="file" id="fileInput" accept="image/*" />
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+
+      <!-- Game Container -->
+      <div class="game-container">
+        <div class="game-title" id="gameMessage">Tic-Tac-Toe</div>
+        <div class="board" id="board"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatBox = document.getElementById('chatBox');
+    const fileInput = document.getElementById('fileInput');
+    const board = document.getElementById('board');
+    const gameMessage = document.getElementById('gameMessage');
+    const usernameInput = document.getElementById('username');
+
+    let currentPlayer = 'X'; // Alternates between 'X' and 'O'
+    const cells = [];
+    let gameActive = true;
+
+    // Create cells for the board
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.index = i;
+      board.appendChild(cell);
+      cells.push('');
+
+      cell.addEventListener('click', () => {
+        if (gameActive && !cell.textContent) {
+          socket.emit('move', { index: i, player: currentPlayer });
+        }
+      });
+    }
+
+    socket.on('move', ({ index, player }) => {
+      const cell = board.querySelector(`[data-index="${index}"]`);
+      if (cell && !cell.textContent && gameActive) {
+        cell.textContent = player;
+        cells[index] = player;
+        if (checkWinner(player)) {
+          gameMessage.textContent = `${player} wins!`;
+          gameActive = false;
+          resetBoard();
+        } else if (cells.every(cell => cell)) {
+          gameMessage.textContent = "It's a draw!";
+          gameActive = false;
+          resetBoard();
+        } else {
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        }
+      }
+    });
+
+    function checkWinner(player) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+        [0, 4, 8], [2, 4, 6] // Diagonals
+      ];
+      return winPatterns.some(pattern => {
+        return pattern.every(index => cells[index] === player);
+      });
+    }
+
+    function resetBoard() {
+      setTimeout(() => {
+        gameActive = true;
+        cells.fill('');
+        board.querySelectorAll('.cell').forEach(cell => {
+          cell.textContent = '';
+        });
+        gameMessage.textContent = "Waiting for your turn...";
+      }, 2000);
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const message = chatInput.value.trim();
+      if (message) {
+        socket.emit('chatMessage', { user: usernameInput.value || 'Anonymous', message });
+        chatInput.value = ''; // Clear the input field
+      }
+    });
+
+    // Send image
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          socket.emit('chatImage', {
+            user: usernameInput.value || 'Anonymous',
+            image: reader.result
+          });
+        };
+        reader.readAsDataURL(file); // Convert image to base64 string
+      }
+    });
+
+    socket.on('chatMessage', (data) => {
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `${data.user}: ${data.message}`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    });
+
+    socket.on('chatImage', (data) => {
+      const imageElement = document.createElement('img');
+      imageElement.src = data.image;
+      imageElement.style.maxWidth = '100px';
+      imageElement.style.maxHeight = '100px';
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `${data.user}: `;
+      messageElement.appendChild(imageElement);
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    });
+
+    socket.on('currentPlayer', (player) => {
+      currentPlayer = player;
+      gameMessage.textContent = `It's ${currentPlayer}'s turn`;
+    });
+  </script>
+</body>
+</html>
+
+
+
